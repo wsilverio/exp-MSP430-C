@@ -43,7 +43,7 @@ void main(void){
 	P1IE = P1IES = botao; // habilita int. somente no botao e config. como borda de descida
 	P1IFG = 0; // limpa int. P1
 	
-	TA0CTL = TASSEL_2 + ID_1 + MC_0; // SMCLK + DIV(2) + STOP
+	TA0CTL = TASSEL_2 + ID_2 + MC_0; // SMCLK + DIV(2) + STOP
 	TACCTL0	|= CCIE; // habilita int. por comparacao
 	TACCR0 = 62500; // * div(2) = 125000us : periodo = 250ms
 	
