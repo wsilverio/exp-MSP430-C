@@ -17,16 +17,16 @@ __interrupt void int_P1(void){
 	}
 	
 	// Debouncing
-	__delay_cycles(10);
+	__delay_cycles(5000);
 	while(!(P1IN & botao));
-	__delay_cycles(10);
+	__delay_cycles(5000);
 
 	P1IFG &= ~botao; // limpa flag int. P1
 }
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void int_timer_A(void){
 	P1OUT ^= LEDS; // inverte leds
-	TACCTL0 &= ~CCIFG;	// limpa flag int. timer A0
+	TACCTL0 &= ~CCIFG; // limpa flag int. timer A0
 }
 
 void main(void){
