@@ -78,14 +78,14 @@ void LCD_escreve_bin(char bin, char rs){
     // escreve HSB
     P2OUT |= (0xF0 & bin);
 
-    // pulso enable (1ms)
+    // pulso enable (1us)
     P1OUT |= E;
     P1OUT &= ~E;
 
     // escreve LSB
     P2OUT |= (0x0F & bin) << 4;
 
-    // pulso enable (1ms)
+    // pulso enable (1us)
     P1OUT |= E;
     P1OUT &= ~E;
 }
