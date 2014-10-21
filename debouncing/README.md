@@ -4,7 +4,9 @@ MCU: MSP430G2553
 Compilado e gravado com 'msp430-gcc' e 'mspdebug'  
   
 Linux:  
-$ msp430-gcc -mmcu=msp430g2553 -o debouncing.elf debouncing.c  
-$ mspdebug rf2500  
-(mspdebug) prog debouncing.elf  
-(mspdebug) run
+```console
+ $ msp430-gcc -mmcu=msp430g2553 -o debouncing.elf debouncing.c
+ $ mspdebug rf2500
+ (mspdebug) prog debouncing.elf
+ (mspdebug) run
+```
