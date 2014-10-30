@@ -181,9 +181,13 @@ void LCD_cursor_config(char mostra, char blink){
 
 void itoa(long unsigned int inteiro, char* string, int base){
     // checa se a base é válida
-    if (base < 2 || base > 36) { *string = '\0';}
+    if (base < 2 || base > 36) {
+        *string = '\0';
+    }
+    
     char* ptr = string, *ptr1 = string, tmp_char;
     int tmp_inteiro;
+
     do {
         tmp_inteiro = inteiro;
         inteiro /= base;
