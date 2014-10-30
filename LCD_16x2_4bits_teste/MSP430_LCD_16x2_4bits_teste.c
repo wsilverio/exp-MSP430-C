@@ -180,6 +180,8 @@ void LCD_cursor_config(char mostra, char blink){
 }
 
 void itoa(long unsigned int inteiro, char* string, int base){
+    // por http://www.strudel.org.uk/itoa/
+    
     // checa se a base é válida
     if (base < 2 || base > 36) {
         *string = '\0';
