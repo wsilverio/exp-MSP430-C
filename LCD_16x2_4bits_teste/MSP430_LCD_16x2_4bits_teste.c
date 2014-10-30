@@ -21,6 +21,7 @@ void LCD_limpa_display(void);
 void LCD_pos_cursor(char lin, char col);
 void LCD_home(void);
 void LCD_cursor_config(char mostra, char blink);
+void itoa(long unsigned int inteiro, char* string, int base);
 
 void main(void){
     
@@ -33,7 +34,9 @@ void main(void){
     
     // configura portas
     P2DIR |= PIN_DATA;
-    P2SEL &= P2SEL2 &= P2OUT &= ~PIN_DATA;
+    P2SEL &= ~PIN_DATA;
+    P2SEL2 &= ~PIN_DATA;
+    P2OUT &= ~PIN_DATA;
     
     P1DIR |= (RS + E);
     P1OUT &= ~(RS + E);
@@ -145,7 +148,21 @@ void LCD_escreve_texto(char *caracter){
 void LCD_pos_cursor(char lin, char col){
     // linha 0: 0x00 ... 0x0F
     // linha 1: 0x40 ... 0x4F
+
+    if(col < 0){
+        col = 0;
+    }else if(col > 16){
+        col = 16;
+    }
+    
+    if (lin < 0){
+        lin = 0;
+    }else if( lin > 1){
+        lin = 1;
+    }
+
     char posicao = (0x40 * lin) + col;
+
     LCD_escreve_bin(BIT7 + posicao, 0);
 }
 
@@ -160,4 +177,27 @@ void LCD_cursor_config(char mostra, char blink){
     // blink = 0: cursor estático
     LCD_escreve_bin((BIT3 + BIT2 + (mostra?BIT1:0) + blink), 0);
 
+}
+
+void itoa(long unsigned int inteiro, char* string, int base){
+    // checa se a base é válida
+    if (base < 2 || base > 36) { *string = '\0';}
+    char* ptr = string, *ptr1 = string, tmp_char;
+    int tmp_inteiro;
+    do {
+        tmp_inteiro = inteiro;
+        inteiro /= base;
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_inteiro - inteiro * base)];
+    } while ( inteiro );
+    
+    // Aplica sinal negativo
+    if (tmp_inteiro < 0) *ptr++ = '-';
+    
+    *ptr-- = '\0';
+    
+    while(ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr--= *ptr1;
+        *ptr1++ = tmp_char;
+    }
 }
