@@ -40,7 +40,7 @@ void Serial_config(void){
 
     UCA0BR1 = (BRx & 0xFF00) >> 8;
     UCA0BR0 = (BRx & 0x00FF);
-    UCA0MCTL |= roundX((n - BRx)*8) << 1; // |= BRSx; // |= 0x03 << 1; // |= 0x06;
+    UCA0MCTL |= roundX((n - BRx)*8) << 1; // |= BRSx;
 
     // USCI reset: liberado para operacao
     UCA0CTL1 &= ~UCSWRST; // &= ~0x01
