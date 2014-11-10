@@ -11,4 +11,4 @@ Potenciômetro controlando a luminosidade de um LED
 
 **ADC10MEM:** GND = 0 --- VCC = 1023
 
-**LED:** P1.6 (led verde)
+**LED:** P1.6 (led verde - LaunchPad)

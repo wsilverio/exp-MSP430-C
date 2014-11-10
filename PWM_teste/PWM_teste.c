@@ -6,7 +6,7 @@ unsigned int valor_ADC = 0;
 
 void main(void){
 
-	// desabilita wdt
+    // desabilita wdt
     WDTCTL = WDTPW + WDTHOLD;
 
     // configura clock 8MHz
@@ -19,14 +19,14 @@ void main(void){
 
     // configuração do timer A0
     TA0CTL = TASSEL_2 + ID_1 + MC_1; // SMCLK + DIV(2) + UP CCR0
-	TACCTL0	|= CCIE; // int. por comparação
-	TACCTL1 |= OUTMOD_6; // PWM toggle/set
-	TACCR0 = 1023; // período: valor máx ADC
-	TACCR1 = 0; // reset
+    TACCTL0 |= CCIE; // int. por comparação
+    TACCTL1 |= OUTMOD_6; // PWM toggle/set
+    TACCR0 = 1023; // período: valor máx ADC
+    TACCR1 = 0; // reset
 
-	// configuração do ADC10
+    // configuração do ADC10
 
-	// SREF_0: referência: VCC e GND
+    // SREF_0: referência: VCC e GND
     // ADC10SHT_2: amostra em 16 ciclos
     // ADC10ON: liga o ADC
     // ADC10IE: habilita interrupção do ADC
@@ -46,30 +46,33 @@ void main(void){
     // ENC: habilita conversão
     // ADC10SC: inicia a conversão
     ADC10CTL0 |= ENC + ADC10SC;
-	
-	while(1); // loop
+    
+    while(1); // loop
 }
 
-#pragma vector = TIMER0_A0_VECTOR
-__interrupt void int_timer_A(void){
+//#pragma vector = TIMER0_A0_VECTOR
+//__interrupt void int_timer_A(void){
+__attribute__((interrupt(TIMER0_A0_VECTOR)))
+void int_timer_A(void){
 
-	// atualiza o tempo em nivel alto
-	TACCR1 = valor_ADC;
-	
-	// limpa a flag do int. timer
-	TACCTL0 &= ~CCIFG;
+    // atualiza o tempo em nivel alto
+    TACCR1 = valor_ADC;
+    
+    // limpa a flag do int. timer
+    TACCTL0 &= ~CCIFG;
 }
 
-#pragma vector = ADC10_VECTOR
-__interrupt void int_ADC10(void){
+//#pragma vector = ADC10_VECTOR
+//__interrupt void int_ADC10(void){
+__attribute__((interrupt(ADC10_VECTOR)))
+void int_ADC10(void){
+    // Lê o valor do ADC
+    valor_ADC = ADC10MEM;
 
-	// Lê o valor do ADC
-	valor_ADC = ADC10MEM;
+    // Limpa flag interrupção do ADC
+    ADC10CTL0 &= ~ADC10IFG;
 
-	// Limpa flag interrupção do ADC
-	ADC10CTL0 &= ~ADC10IFG;
-
-	// ADC10SC: inicia nova conversão
-	ADC10CTL0 |= ADC10SC;
+    // ADC10SC: inicia nova conversão
+    ADC10CTL0 |= ADC10SC;
 
 }
