@@ -140,14 +140,14 @@ void main(void){
   
     // configura as saídas do P2
     
-	P2DIR = RST + SCE + DC;
+    P2DIR = RST + SCE + DC;
 
     config_USIB();
-	
+    
     LCDNokia_config();
 
     LCDNokia_write_str("Ola, mundo!");
-		
+        
     while(1);
     
 }
@@ -157,8 +157,8 @@ void config_USIB(){
     // USIB
     P1SEL |= SCLK + SDIN;
     P1SEL2 |= SCLK + SDIN;
-	
-	UCB0CTL1 |= UCSWRST;
+    
+    UCB0CTL1 |= UCSWRST;
 
     // Data capture, MSB, Master, 3-pin SPI, sinc
     UCB0CTL0 |= UCCKPH + UCMSB + UCMST + UCMODE_0 + UCSYNC;
@@ -169,13 +169,13 @@ void config_USIB(){
     UCB0BR1 = 0;
     // SPI habilitada
     UCB0CTL1 &= ~UCSWRST;
-	
-	IFG2 &= ~UCB0TXIFG;
+    
+    IFG2 &= ~UCB0TXIFG;
 }
 
 void LCDNokia_config(){
     
-	P2OUT &= ~RST;
+    P2OUT &= ~RST;
     delay_ms(50);
     P2OUT |= RST;
 
@@ -199,11 +199,11 @@ void LCDNokia_write_byte(char bin, char dc){
 
     // Envia o byte
     UCB0TXBUF = bin;
-	
-	// Aguarda buffer vazio
+    
+    // Aguarda buffer vazio
     while(!(IFG2 & UCB0TXIFG));
-	
-	P2OUT |= SCE;
+    
+    P2OUT |= SCE;
 }
 
 void LCDNokia_write_char(char dado){
