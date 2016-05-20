@@ -1,10 +1,17 @@
 /*
-    A fazer:
-        - '\n'
-        - tamanho da fonte
-        - fundo escuro, fonte clara
-*/
+ * Controlador display PCD8544 SPI
+ *
+ * A fazer:
+ *      - '\n'
+ *      - tamanho da fonte
+ *      - fundo escuro, fonte clara
+ *      - acentuacao
+ *
+ */
+
 #include <msp430.h>
+#include <stdint.h>     // int8_t, int16_t, ...
+#include <stdbool.h>    // bool
 
 #define RST  BIT0 // P2.0 RESET | borda negativa
 #define SCE  BIT1 // P2.1 Chip Enable | Borda de subida: inicializa Serial | Borda de descida: habilita serial e indica inicio da transmissao
@@ -12,24 +19,24 @@
 #define SDIN BIT7 // P1.7 Serial Data Line | borda de subida SCLK
 #define SCLK BIT5 // P1.5 Serial Clock Line
 
-#define CMD 0
-#define TXT 1
-#define WHITE 0
-#define BLACK 0xFF // 7px
-#define LCDNokia_width 84
-#define LCDNokia_height 48
+#define NOKIA_CMD_MODE      0x00
+#define NOKIA_TXT_MODE      0x01
+#define NOKIA_WHITE_BLOCK   0x00
+#define NOKIA_BLACK_BLOCK   0xFF // 7px
+#define NOKIA_WIDTH         84
+#define NOKIA_HEIGHT        48
 
-void config_USIB();
-void LCDNokia_config();
-void LCDNokia_write_byte(char bin, char dc);
-void LCDNokia_write_char(char dado);
-void LCDNokia_write_str(char *caracter);
-void LCDNokia_clear(char fill);
-void LCDNokia_poscursor(char x, char y);
-void delay_ms(unsigned int ms);
+void USIB_config();
+void nokia_config();
+void nokia_write_byte(uint8_t bin, uint8_t dc);
+void nokia_write_char(char data);
+void nokia_write_str(char *caracter);
+void nokia_clear(uint8_t fill);
+void nokia_cursor(uint8_t x, uint8_t y);
+void delay_ms(uint16_t ms);
 
 static const char font[][5] = {
-     {0x00, 0x00, 0x00, 0x00, 0x00} // 20  
+     {0x00, 0x00, 0x00, 0x00, 0x00} // 20
     ,{0x00, 0x00, 0x5f, 0x00, 0x00} // 21 !
     ,{0x00, 0x07, 0x00, 0x07, 0x00} // 22 "
     ,{0x14, 0x7f, 0x14, 0x7f, 0x14} // 23 #
@@ -103,7 +110,7 @@ static const char font[][5] = {
     ,{0x0c, 0x52, 0x52, 0x52, 0x3e} // 67 g
     ,{0x7f, 0x08, 0x04, 0x04, 0x78} // 68 h
     ,{0x00, 0x44, 0x7d, 0x40, 0x00} // 69 i
-    ,{0x20, 0x40, 0x44, 0x3d, 0x00} // 6a j 
+    ,{0x20, 0x40, 0x44, 0x3d, 0x00} // 6a j
     ,{0x7f, 0x10, 0x28, 0x44, 0x00} // 6b k
     ,{0x00, 0x41, 0x7f, 0x40, 0x00} // 6c l
     ,{0x7c, 0x04, 0x18, 0x04, 0x78} // 6d m
@@ -127,41 +134,35 @@ static const char font[][5] = {
     ,{0x00, 0x06, 0x09, 0x09, 0x06} // 7f →
 };
 
-unsigned char LCDNokia_col = 0; // x
-unsigned char LCDNokia_row = 0; // y
-
 void main(void){
     // desativa watchdog timer
     WDTCTL = WDTPW + WDTHOLD;
-  
+
     // configura o clock @8MHz
     BCSCTL1 = CALBC1_8MHZ;
     DCOCTL = CALDCO_8MHZ;
-  
-    // configura as saídas do P2
-    
-    P2DIR = RST + SCE + DC;
 
-    config_USIB();
-    
-    LCDNokia_config();
+    // configura as saidas do P2
+    P2DIR |= (RST|SCE|DC);
 
-    LCDNokia_write_str("Ola, mundo!");
-        
+    USIB_config();
+    nokia_config();
+
+    nokia_write_str("Ola, mundo!");
+
     while(1);
-    
+
 }
 
-void config_USIB(){
-    
+void USIB_config(){
     // USIB
-    P1SEL |= SCLK + SDIN;
-    P1SEL2 |= SCLK + SDIN;
-    
+    P1SEL  |= (SCLK|SDIN);
+    P1SEL2 |= (SCLK|SDIN);
+
     UCB0CTL1 |= UCSWRST;
 
     // Data capture, MSB, Master, 3-pin SPI, sinc
-    UCB0CTL0 |= UCCKPH + UCMSB + UCMST + UCMODE_0 + UCSYNC;
+    UCB0CTL0 |= (UCCKPH|UCMSB|UCMST|UCMODE_0|UCSYNC);
     // SMCLK
     UCB0CTL1 |= UCSSEL_2;
     // Clock
@@ -169,29 +170,29 @@ void config_USIB(){
     UCB0BR1 = 0;
     // SPI habilitada
     UCB0CTL1 &= ~UCSWRST;
-    
+
     IFG2 &= ~UCB0TXIFG;
 }
 
-void LCDNokia_config(){
-    
+void nokia_config(){
+
     P2OUT &= ~RST;
     delay_ms(50);
     P2OUT |= RST;
 
-    LCDNokia_write_byte(0x21, CMD); // instrucoes extendidas
-    LCDNokia_write_byte(0xB1, CMD); // contraste
-    LCDNokia_write_byte(0x04, CMD); // coef temperatura
-    LCDNokia_write_byte(0x14, CMD); // bias modo 1:48
-    LCDNokia_write_byte(0x20, CMD); // retorna para os comandos básicos
-    LCDNokia_write_byte(0x0C, CMD); // modo normal
+    nokia_write_byte(0x21, NOKIA_CMD_MODE); // instrucoes extendidas
+    nokia_write_byte(0xB1, NOKIA_CMD_MODE); // contraste
+    nokia_write_byte(0x04, NOKIA_CMD_MODE); // coef temperatura
+    nokia_write_byte(0x14, NOKIA_CMD_MODE); // bias modo 1:48
+    nokia_write_byte(0x20, NOKIA_CMD_MODE); // retorna para os comandos básicos
+    nokia_write_byte(0x0C, NOKIA_CMD_MODE); // modo normal
 
-    LCDNokia_clear(WHITE);
+    nokia_clear(NOKIA_WHITE_BLOCK);
 }
 
-void LCDNokia_write_byte(char bin, char dc){
+void nokia_write_byte(uint8_t bin, uint8_t dc){
 
-    // CMD ou TXT
+    // NOKIA_CMD_MODE ou NOKIA_TXT_MODE
     P2OUT = (dc)?(P2OUT | DC):(P2OUT & ~DC);
 
     // Seleciona o display
@@ -199,45 +200,46 @@ void LCDNokia_write_byte(char bin, char dc){
 
     // Envia o byte
     UCB0TXBUF = bin;
-    
+
     // Aguarda buffer vazio
     while(!(IFG2 & UCB0TXIFG));
-    
+
     P2OUT |= SCE;
 }
 
-void LCDNokia_write_char(char dado){
+void nokia_write_char(char data){
 
-    //LCDNokia_write_byte(0x00, TXT); // coluna vazia (espaçamento)
-
-    for(int i = 0; i < 5; i++){
-        LCDNokia_write_byte(font[dado - 0x20][i], TXT); // caracter da tabela ASCII
+    //nokia_write_byte(0x00, NOKIA_TXT_MODE); // coluna vazia (espaçamento)
+    uint8_t i;
+    for(i = 0; i < 5; i++){
+        nokia_write_byte(font[data-0x20][i], NOKIA_TXT_MODE); // caracter da tabela ASCII
     }
 
-    LCDNokia_write_byte(0x00, TXT); // coluna vazia (espaçamento)
+    nokia_write_byte(0x00, NOKIA_TXT_MODE); // coluna vazia (espaçamento)
 }
 
-void LCDNokia_write_str(char *caracter){
+void nokia_write_str(char *caracter){
     while(*caracter){
-        LCDNokia_write_char(*caracter);
+        nokia_write_char(*caracter);
         caracter++;
     }
 }
 
-void LCDNokia_clear(char fill){
-    for (int i = 0; i < LCDNokia_width * LCDNokia_height / 8; i++){
-        LCDNokia_write_byte(fill, TXT);
+void nokia_clear(uint8_t fill){
+    uint16_t i;
+    for (i = 0; i < ((NOKIA_WIDTH*NOKIA_HEIGHT)>>3); i++){
+        nokia_write_byte(fill, NOKIA_TXT_MODE);
     }
 
-    LCDNokia_poscursor(0, 0);
+    nokia_cursor(0, 0);
 }
 
-void LCDNokia_poscursor(char x, char y){
-    LCDNokia_write_byte(0x80 + x*6, CMD);
-    LCDNokia_write_byte(0x40+y, CMD);
+void nokia_cursor(uint8_t x, uint8_t y){
+    nokia_write_byte(0x80+x*6, NOKIA_CMD_MODE);
+    nokia_write_byte(0x40+y, NOKIA_CMD_MODE);
 }
 
-void delay_ms(unsigned int ms){
+void delay_ms(uint16_t ms){
     while (ms--) {
         __delay_cycles(8000);
     }
